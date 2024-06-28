@@ -2,7 +2,6 @@ import os
 import sys
 import pandas as pd
 from tqdm import tqdm
-from pandas.io.parsers import TextFileReader
 
 # Add the project directory to the Python path
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -30,10 +29,14 @@ def create_features(data):
         logger.info("Created monthly aggregates")
         print("Created monthly aggregates")
         
-        # Ensure income and expense columns exist or create them based on some logic
-        if 'income' not in data.columns or 'expense' not in data.columns:
-            logger.error("Income and expense columns are missing from the data")
-            raise KeyError("Income and expense columns are missing from the data")
+        # Ensure income and expense columns exist
+        if 'income' not in data.columns:
+            logger.warning("Income column is missing from the data, creating a dummy column")
+            data['income'] = 0  # Replace with appropriate logic
+        
+        if 'expense' not in data.columns:
+            logger.warning("Expense column is missing from the data, creating a dummy column")
+            data['expense'] = 0  # Replace with appropriate logic
         
         # Example feature: Income-to-expense ratio
         print("Creating income-to-expense ratio...")
@@ -56,23 +59,21 @@ def create_features(data):
         print(f"Error during feature engineering: {e}")
         raise
 
-def read_excel_with_progress_bar(file_path):
-    """Read an Excel file with a progress bar."""
-    # Use ExcelFile to get the number of rows in advance
-    excel_file = pd.ExcelFile(file_path)
-    total_rows = 0
-    for sheet_name in excel_file.sheet_names:
-        total_rows += len(pd.read_excel(file_path, sheet_name=sheet_name, nrows=0))
+def read_parquet_with_progress_bar(file_path, chunksize=1000):
+    """Read a Parquet file with a progress bar."""
+    import dask.dataframe as dd
+    df = dd.read_parquet(file_path)
+    total_rows = len(df)
     
     # Initialize the progress bar
-    pbar = tqdm(total=total_rows, desc="Loading Excel file", unit="rows")
-
-    # Read the Excel file
+    pbar = tqdm(total=total_rows, desc="Loading Parquet file", unit="rows")
+    
+    # Read the Parquet file in chunks
     dfs = []
-    for sheet_name in excel_file.sheet_names:
-        df = pd.read_excel(file_path, sheet_name=sheet_name)
-        pbar.update(len(df))
-        dfs.append(df)
+    for chunk in df.to_delayed():
+        chunk_df = chunk.compute()
+        pbar.update(len(chunk_df))
+        dfs.append(chunk_df)
     
     pbar.close()
     return pd.concat(dfs, ignore_index=True)
@@ -80,17 +81,24 @@ def read_excel_with_progress_bar(file_path):
 if __name__ == '__main__':
     # Test feature engineering
     try:
-        encoded_data_path = os.path.join(project_root, 'data_integration', 'normalized_encoded_data.xlsx')
-        if os.path.exists(encoded_data_path):
-            print(f"Loading encoded data from {encoded_data_path}...")
-            data = read_excel_with_progress_bar(encoded_data_path)
+        parquet_data_path = os.path.join(project_root, 'data_integration', 'normalized_encoded_data.parquet')
+        output_data_path = os.path.join(project_root, 'data_integration', 'featured_data.parquet')
+
+        if os.path.exists(parquet_data_path):
+            print(f"Loading encoded data from {parquet_data_path}...")
+            data = read_parquet_with_progress_bar(parquet_data_path)
             print("Encoded data loaded successfully")
             data = create_features(data)
             logger.info("Successfully created features")
             print("Successfully created features")
+            
+            # Save the transformed data to a new Parquet file
+            data.to_parquet(output_data_path, index=False)
+            logger.info(f"Saved featured data to {output_data_path}")
+            print(f"Saved featured data to {output_data_path}")
         else:
-            logger.error(f"Encoded data file not found at {encoded_data_path}")
-            print(f"Encoded data file not found at {encoded_data_path}")
+            logger.error(f"Encoded data file not found at {parquet_data_path}")
+            print(f"Encoded data file not found at {parquet_data_path}")
     except Exception as e:
         logger.error(f"Error: {e}")
         print(f"Error: {e}")

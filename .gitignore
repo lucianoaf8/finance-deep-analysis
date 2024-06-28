@@ -21,6 +21,9 @@ Thumbs.db
 # Excel files
 *.xlsx
 
+# Parquet files
+*.parquet
+
 # Other backup and temporary files
 *.bak
 *.tmp

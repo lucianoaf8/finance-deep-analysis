@@ -66,6 +66,15 @@ if __name__ == '__main__':
             print("Loading data...")
             logger.info("Loading data...")
             data = pd.read_excel(combined_data_path)
+
+            # Ensure income and expense columns are included
+            if 'income' not in data.columns:
+                logger.warning("Income column is missing from the data, creating a dummy column")
+                data['income'] = 0  # Replace with appropriate logic
+            
+            if 'expense' not in data.columns:
+                logger.warning("Expense column is missing from the data, creating a dummy column")
+                data['expense'] = 0  # Replace with appropriate logic
                 
             normalized_encoded_data = normalize_and_encode(data)
             

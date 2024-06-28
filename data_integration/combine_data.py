@@ -26,8 +26,9 @@ def combine_data(dataframes):
             combined_data = pd.concat([combined_data, df], ignore_index=True)
             logger.info(f"Combined data for {name} successfully")
         
-        combined_data.to_excel('data_integration/combined_data.xlsx', index=False)
-        logger.info("Saved combined data to 'data_integration/combined_data.xlsx'")
+        combined_data_path = os.path.join(project_root, 'data_integration', 'combined_data.parquet')
+        combined_data.to_parquet(combined_data_path, index=False)
+        logger.info(f"Saved combined data to '{combined_data_path}'")
         
         logger.info("Data combination process completed successfully")
         print("Data combination process completed successfully")

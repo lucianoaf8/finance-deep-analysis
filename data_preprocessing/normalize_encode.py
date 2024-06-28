@@ -71,9 +71,8 @@ if __name__ == '__main__':
             
             print("Saving data...")
             logger.info("Saving data...")
-            # Add detailed logging around the save operation
             try:
-                chunk_size = 100  # Adjusted based on your requirement
+                chunk_size = 500
                 total_chunks = (len(normalized_encoded_data) // chunk_size) + 1
                 with pd.ExcelWriter(normalized_encoded_data_path, engine='xlsxwriter') as writer:
                     for i in range(0, len(normalized_encoded_data), chunk_size):

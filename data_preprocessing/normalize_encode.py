@@ -11,16 +11,16 @@ project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(project_root)
 
 from utils.logging_setup import setup_logging
-from utils.progress_logger import ProgressLogger
 
 logger = setup_logging('normalize_encode')
 
-def normalize_and_encode(data, progress):
+def normalize_and_encode(data):
     """Normalize numerical data and encode categorical variables."""
     logger.info("Starting data normalization and encoding process")
     
     try:
-        progress.update(1, "Normalizing numerical data")
+        print("Normalizing numerical data...")
+        logger.info("Normalizing numerical data...")
         # Select numerical columns for normalization
         numerical_cols = data.select_dtypes(include=['float64', 'int64']).columns
         # Replace inf values with NaN and then fill NaN values with 0
@@ -30,7 +30,8 @@ def normalize_and_encode(data, progress):
         data[numerical_cols] = scaler.fit_transform(data[numerical_cols])
         logger.info("Normalized numerical data")
         
-        progress.update(1, "Encoding categorical data")
+        print("Encoding categorical data...")
+        logger.info("Encoding categorical data...")
         # Select categorical columns for encoding and ensure they are strings
         categorical_cols = data.select_dtypes(include=['object']).columns
         data[categorical_cols] = data[categorical_cols].astype(str)
@@ -39,7 +40,8 @@ def normalize_and_encode(data, progress):
         encoded_data.columns = encoder.get_feature_names_out(categorical_cols)
         logger.info("Encoded categorical data")
         
-        progress.update(1, "Concatenating data")
+        print("Concatenating data...")
+        logger.info("Concatenating data...")
         # Concatenate the normalized and encoded data
         data = pd.concat([data, encoded_data], axis=1)
         data.drop(columns=categorical_cols, inplace=True)
@@ -60,29 +62,39 @@ if __name__ == '__main__':
         combined_data_path = os.path.join(project_root, 'data_integration', 'combined_data.xlsx')
         normalized_encoded_data_path = os.path.join(project_root, 'data_integration', 'normalized_encoded_data.xlsx')
 
-        # Initialize progress logger
-        progress = ProgressLogger(total_steps=5)
-        
         if os.path.exists(combined_data_path):
-            progress.update(1, "Loading data")
+            print("Loading data...")
+            logger.info("Loading data...")
             data = pd.read_excel(combined_data_path)
                 
-            normalized_encoded_data = normalize_and_encode(data, progress)
+            normalized_encoded_data = normalize_and_encode(data)
             
-            progress.update(1, "Saving data")
-            # Save the normalized and encoded data
-            normalized_encoded_data.to_excel(normalized_encoded_data_path, index=False)
-            logger.info(f"Saved normalized and encoded data to {normalized_encoded_data_path}")
-            print(f"Saved normalized and encoded data to {normalized_encoded_data_path}")
+            print("Saving data...")
+            logger.info("Saving data...")
+            # Add detailed logging around the save operation
+            try:
+                chunk_size = 100  # Adjusted based on your requirement
+                total_chunks = (len(normalized_encoded_data) // chunk_size) + 1
+                with pd.ExcelWriter(normalized_encoded_data_path, engine='xlsxwriter') as writer:
+                    for i in range(0, len(normalized_encoded_data), chunk_size):
+                        chunk_number = (i // chunk_size) + 1
+                        logger.info(f"Saving chunk {chunk_number}/{total_chunks}")
+                        print(f"Saving chunk {chunk_number}/{total_chunks}")
+                        startrow = i if i == 0 else i + 1
+                        normalized_encoded_data.iloc[i:i + chunk_size].to_excel(writer, index=False, startrow=startrow, header=i==0)
+                logger.info(f"Saved normalized and encoded data to {normalized_encoded_data_path}")
+                print(f"Saved normalized and encoded data to {normalized_encoded_data_path}")
+            except Exception as e:
+                logger.error(f"Error while saving data: {e}")
+                print(f"Error while saving data: {e}")
+                raise
 
             logger.info("Successfully normalized and encoded data")
             print("Successfully normalized and encoded data")
-            progress.finish()
             sys.exit(0)  # Ensure the script exits properly
         else:
             logger.error(f"Combined data file not found at {combined_data_path}")
             print(f"Combined data file not found at {combined_data_path}")
-            progress.finish()
             sys.exit(1)  # Exit with an error code if the file is not found
     except Exception as e:
         print(f"Error: {e}")

@@ -1,4 +1,4 @@
-# C:\Projects\finance-deep-analysis\data_extraction\clean_data.py
+# data_extraction\clean_data.py
 
 import os
 import sys

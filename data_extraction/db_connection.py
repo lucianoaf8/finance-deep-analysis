@@ -1,4 +1,4 @@
-# C:\Projects\finance-deep-analysis\data_extraction\db_connection.py
+# data_extraction\db_connection.py
 
 import os
 import sys

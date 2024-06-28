@@ -1,4 +1,4 @@
-# C:\Projects\finance-deep-analysis\utils\config.py
+# utils\config.py
 
 import os
 from dotenv import load_dotenv

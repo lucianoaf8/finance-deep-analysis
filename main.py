@@ -1,4 +1,4 @@
-# C:\Projects\finance-deep-analysis\main.py
+# main.py
 
 import os
 import sys

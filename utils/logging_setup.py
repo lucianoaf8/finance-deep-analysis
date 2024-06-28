@@ -1,4 +1,4 @@
-# C:\Projects\finance-deep-analysis\utils\logging_setup.py
+# utils\logging_setup.py
 
 import logging
 import os

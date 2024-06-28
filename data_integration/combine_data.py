@@ -1,4 +1,4 @@
-# C:\Projects\finance-deep-analysis\data_integration\combine_data.py
+# data_integration\combine_data.py
 
 import os
 import sys
